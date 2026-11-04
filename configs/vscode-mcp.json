@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "el7": {
+      "type": "http",
+      "url": "https://mcp.el7.ai/mcp"
+    }
+  }
+}

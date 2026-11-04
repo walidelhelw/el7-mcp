@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ai.el7/mcp",
+  "title": "EL7.AI",
+  "description": "Financial market intelligence: news, macro, central banks, COT, stocks, earnings, gold and oil.",
+  "version": "1.1.0",
+  "websiteUrl": "https://el7.ai/en/mcp",
+  "icons": [
+    {
+      "src": "https://el7.ai/icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.el7.ai/mcp"
+    }
+  ]
+}

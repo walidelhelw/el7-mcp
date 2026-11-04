@@ -1,0 +1,1 @@
+goose://extension?url=https%3A%2F%2Fmcp.el7.ai%2Fmcp&type=streamable_http&id=el7&name=EL7.AI&description=EL7%20markets%20research

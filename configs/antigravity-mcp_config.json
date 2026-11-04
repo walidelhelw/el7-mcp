@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "el7": {
+      "serverUrl": "https://mcp.el7.ai/mcp"
+    }
+  }
+}

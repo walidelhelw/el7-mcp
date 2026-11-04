@@ -1,0 +1,11 @@
+{
+  "name": "el7",
+  "version": "1.1.0",
+  "description": "Financial market intelligence and research for your AI: news, macro, central banks, COT, stocks, earnings, gold and oil from the hosted EL7.AI MCP server.",
+  "mcpServers": {
+    "el7": {
+      "httpUrl": "https://mcp.el7.ai/mcp"
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}
