@@ -10,7 +10,7 @@ Financial market intelligence and research for your AI.
 
 ## What it is
 
-EL7.AI is a financial market intelligence and research platform. Its MCP server gives your AI assistant 82 read-only tools across 15 areas of market research, so it can answer from curated, sourced data instead of guessing.
+EL7.AI is a financial market intelligence and research platform. Its MCP server gives your AI assistant 85 read-only tools across 15 areas of market research, so it can answer from curated, sourced data instead of guessing.
 
 Coverage: real-time markets news and the EL7 Wire; the global economic calendar with history, consensus and surprise index; eight central banks (Fed, ECB, BoE, BoJ, BoC, RBA, RBNZ, SNB) with decisions, statements, statement-to-statement diffs, press-conference Q&A, previews and tone ranking; CFTC Commitments of Traders positioning; gold and oil fundamentals (flows, reserves, inventories, OPEC, supply and demand); stocks with scores, written analysis, rankings, screener, sector views, analyst consensus, earnings calendar and history, insider and congressional trades; ETFs; market regime, seasonality, correlations and cycles; prediction markets; trading strategies; and a research library. Built for a global audience: English first, with full Arabic support (pass `lang: "ar"`).
 
@@ -39,14 +39,14 @@ Requires an EL7 paid membership. Free accounts can call `el7_whoami` only; anony
 
 ## The 15 areas
 
-Counts as published on https://el7.ai/en/mcp (82 tools in total).
+Counts as published on https://el7.ai/en/mcp (85 tools in total).
 
 | Area | What it returns | Tools |
 |---|---|---|
 | Account | Who is connected and which plan applies. | 1 |
 | News | Latest stories, full text, digests, storylines and sentiment. | 7 |
 | Economic calendar | Upcoming releases, history, surprises and country views. | 6 |
-| Central banks | Decisions, statements, minutes, tone and press-conference Q&A. | 11 |
+| Central banks | Decisions, statements, minutes, tone and press-conference Q&A. | 14 |
 | CFTC positioning | Weekly speculator and commercial positions by market. | 5 |
 | Oil and energy | Inventories, supply, OPEC and the outlook. | 5 |
 | Gold | The conditions index, flows, reserves and supply and demand. | 5 |
