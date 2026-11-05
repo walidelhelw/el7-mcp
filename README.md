@@ -35,7 +35,7 @@ Most clients (Claude, ChatGPT, Codex, Antigravity, Cursor, VS Code, Zed, Goose) 
 
 ## Access
 
-Requires an EL7 paid membership. Free accounts can call `el7_whoami` only; anonymous callers cannot access tools. 10,000 calls/month, 120/minute.
+Full access requires an EL7 paid membership: 100,000 calls/month, 120/minute. Free accounts can call `el7_wire_latest` and `el7_whoami`, within 1,500 calls in total; anonymous callers cannot access tools.
 
 ## The 15 areas
 
