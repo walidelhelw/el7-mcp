@@ -1,0 +1,4298 @@
+{
+  "identifier": "el7-ai",
+  "name": "EL7.AI",
+  "version": "1.1.0",
+  "author": "EL7.AI",
+  "authorUrl": "https://el7.ai",
+  "category": "stocks-finance",
+  "cloudEndpoint": "https://mcp.el7.ai/mcp",
+  "homepage": "https://el7.ai/en/mcp",
+  "icon": "https://el7.ai/mcp-icon-512.png",
+  "description": "Financial market intelligence for your AI: markets news, economic calendar, 8 central banks, COT positioning, stocks, earnings, gold and oil, with sources and dates.\n\nEL7.AI is a financial market intelligence and research platform. Its MCP server gives your AI assistant 85 read-only tools across 15 areas of market research, so it can answer from curated, sourced data instead of guessing.\n\nCoverage: real-time markets news and the EL7 Wire; the global economic calendar with history, consensus and surprise index; eight central banks (Fed, ECB, BoE, BoJ, BoC, RBA, RBNZ, SNB) with decisions, statements, statement-to-statement diffs, press-conference Q&A, previews and tone ranking; CFTC Commitments of Traders positioning; gold and oil fundamentals (flows, reserves, inventories, OPEC, supply and demand); stocks with scores, written analysis, rankings, screener, sector views, analyst consensus, earnings calendar and history, insider and congressional trades; ETFs; market regime, seasonality, correlations and cycles; prediction markets; trading strategies; and a research library. Built for a global audience: English first, with full Arabic support (pass lang \"ar\").\n\nEvery answer returns the source date and an el7.ai link so figures can be checked; missing dates are flagged as unverified. Tools read EL7's stored, published data: they never place trades and do not generate new analysis at call time. News search may use an external embedding service.\n\nConnect the hosted server with OAuth 2.1 (PKCE, dynamic client registration) or a personal EL7 MCP API key. No installation needed. Full access requires an EL7 paid membership: 100,000 tool calls per month, 120 per minute. Free accounts get the EL7 Wire within 1,500 calls in total. Research information only, not personalised investment advice.",
+  "tags": [
+    "financial market intelligence",
+    "market research",
+    "central banks",
+    "economic calendar",
+    "COT",
+    "stocks",
+    "earnings",
+    "gold",
+    "oil",
+    "markets news",
+    "Arabic support",
+    "read-only",
+    "OAuth"
+  ],
+  "tools": [
+    {
+      "name": "el7_whoami",
+      "description": "Shows how this connection is signed in to EL7, the EL7 MCP plan and the calls remaining. Free: it never uses allowance. Use when the user asks about their access, or after a call was refused. Not for market data.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_news_latest",
+      "description": "Latest published EL7 news story cards (headline, subtitle, category, sentiment, impact score, instruments, url), no bodies. Use for 'what is happening now', or to filter by category, instrument, sentiment, impact or time. Pages with next_cursor. Not for a named topic — use el7_news_search; read a card in full with el7_news_story.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "category": {
+            "description": "Filter to one news category. One of: central_banks, forex, commodities, stocks, crypto, bonds, macro, geopolitics, merger, general. Common synonyms are mapped (economy -> macro, earnings -> stocks, fx -> forex, oil/gold -> commodities, m&a -> merger).",
+            "type": "string",
+            "enum": [
+              "central_banks",
+              "forex",
+              "commodities",
+              "stocks",
+              "crypto",
+              "bonds",
+              "macro",
+              "geopolitics",
+              "merger",
+              "general"
+            ]
+          },
+          "instruments": {
+            "description": "Exact instrument symbols as EL7 tags them on news stories (e.g. XAUUSD, AAPL).",
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20
+            }
+          },
+          "period": {
+            "description": "Rolling lookback window, one of 1h, 6h, 24h, 7d, 30d (1d, week and month are read as 24h, 7d, 30d); defaults to 24h when no from/to range is supplied. Cannot be combined with from/to. 30d with no other filter matches more than 5,000 stories and is refused: add category, instruments or min_impact, or use 7d.",
+            "type": "string",
+            "enum": [
+              "1h",
+              "6h",
+              "24h",
+              "7d",
+              "30d"
+            ]
+          },
+          "from": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Range start: YYYY-MM-DD or ISO datetime (no timezone = UTC). Optional on its own: from only = from until now, capped at 90 days after `from`. Total window is at most 90 days."
+          },
+          "to": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Range end: YYYY-MM-DD (includes that whole UTC day) or ISO datetime (no timezone = UTC). Optional on its own: to only = the 90 days ending at `to`. Total window is at most 90 days."
+          },
+          "min_impact": {
+            "description": "Minimum impact_score (1-10).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "sentiment": {
+            "type": "string",
+            "enum": [
+              "bullish",
+              "bearish",
+              "neutral",
+              "mixed"
+            ]
+          },
+          "sort": {
+            "default": "latest",
+            "description": "'latest' = freshest first, 'impact' = highest impact first.",
+            "type": "string",
+            "enum": [
+              "latest",
+              "impact"
+            ]
+          },
+          "updated_since": {
+            "description": "Only stories first published OR content-updated after this ISO timestamp.",
+            "type": "string",
+            "maxLength": 40
+          },
+          "limit": {
+            "description": "Page size, 1-50 (default 20); a larger value is clamped to 50.",
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "cursor": {
+            "description": "Cursor tied to the caller, filters and 15-minute ordered snapshot membership. Expired or foreign cursors are rejected.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_news_search",
+      "description": "Hybrid keyword and semantic search over published EL7 news stories; returns cards with a short snippet. Use when the user names a topic, company or event. Without a from/to window, stories older than about a month rank lower unless they match strongly (relevance still leads). Falls back to keyword-only if embeddings are down. Stories are stored in Arabic and English, so an Arabic query matches Arabic wording; pass lang 'ar' for Arabic cards. Not for 'latest' — use el7_news_latest; full text via el7_news_story.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "category": {
+            "description": "Filter to one news category. One of: central_banks, forex, commodities, stocks, crypto, bonds, macro, geopolitics, merger, general. Common synonyms are mapped (economy -> macro, earnings -> stocks, fx -> forex, oil/gold -> commodities, m&a -> merger).",
+            "type": "string",
+            "enum": [
+              "central_banks",
+              "forex",
+              "commodities",
+              "stocks",
+              "crypto",
+              "bonds",
+              "macro",
+              "geopolitics",
+              "merger",
+              "general"
+            ]
+          },
+          "from": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Range start: YYYY-MM-DD or ISO datetime (no timezone = UTC). Optional on its own: from only = from until now, capped at 90 days after `from`. Total window is at most 90 days."
+          },
+          "to": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Range end: YYYY-MM-DD (includes that whole UTC day) or ISO datetime (no timezone = UTC). Optional on its own: to only = the 90 days ending at `to`. Total window is at most 90 days."
+          },
+          "limit": {
+            "description": "Page size, 1-25 (default 10); a larger value is clamped to 25.",
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 25
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_news_story",
+      "description": "Full text of one published EL7 news story by slug or UUID: body, key facts, sources, updates, related stories and linked calendar events. Use after el7_news_latest or el7_news_search. Returns data:null if the story is unpublished, merged, archived or timeline-only.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "A story slug (Arabic or English) or UUID."
+          },
+          "include": {
+            "default": [
+              "updates",
+              "related",
+              "calendar",
+              "sources"
+            ],
+            "description": "Which optional sections to attach.",
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "updates",
+                "related",
+                "calendar",
+                "sources"
+              ]
+            }
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_news_reports",
+      "description": "EL7's editorial digests: daily session recaps (pre_eu, pre_us, post_us, post_eu), weekly, monthly, market_open (weekend recap) and the rolling brief. Use for 'what happened this session or week'; list:true browses recent ones. Briefs return up to 50 visible stories (coverage.has_more says if more exist); desk articles are not included; source timestamps may be null. Raw market-price blocks are never returned. Not for one topic — use el7_news_search.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly",
+              "market_open",
+              "brief"
+            ]
+          },
+          "session": {
+            "description": "Daily reports only. With list:true, keeps only that session's recaps.",
+            "type": "string",
+            "enum": [
+              "pre_eu",
+              "pre_us",
+              "post_us",
+              "post_eu"
+            ]
+          },
+          "date": {
+            "description": "'latest' (default) or a valid YYYY-MM-DD. With list:true, lists reports on or before that date.",
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "latest"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "period": {
+            "description": "YYYY-MM, monthly reports only.",
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "list": {
+            "default": false,
+            "description": "Return summaries of the most recent reports of this type.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Published report UUID; unavailable for rolling briefs (use their brief_date).",
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "limit": {
+            "description": "Page size, 1-20 (default 10); a larger value is clamped to 20.",
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_news_storylines",
+      "description": "Storylines group related stories tracking one situation over several days (a rate-decision cycle, an M&A saga). Use for 'how has X developed'. Pass slug for one storyline with its timeline; omit it to list by status (default breaking, developing, ongoing). Not for a single article — use el7_news_story.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "status": {
+            "default": [
+              "breaking",
+              "developing",
+              "ongoing"
+            ],
+            "description": "Storyline lifecycle states to include.",
+            "minItems": 1,
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "candidate",
+                "breaking",
+                "developing",
+                "ongoing",
+                "fading",
+                "resolved"
+              ]
+            }
+          },
+          "category": {
+            "description": "Filter to one news category. One of: central_banks, forex, commodities, stocks, crypto, bonds, macro, geopolitics, merger, general. Common synonyms are mapped (economy -> macro, earnings -> stocks, fx -> forex, oil/gold -> commodities, m&a -> merger).",
+            "type": "string",
+            "enum": [
+              "central_banks",
+              "forex",
+              "commodities",
+              "stocks",
+              "crypto",
+              "bonds",
+              "macro",
+              "geopolitics",
+              "merger",
+              "general"
+            ]
+          },
+          "slug": {
+            "description": "Return one storyline (with its stories) by slug.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "limit": {
+            "description": "Page size, 1-50 (default 20); a larger value is clamped to 50.",
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_news_pulse",
+      "description": "Sentiment computed from recent news coverage, not price action, from -1 (bearish) to +1 (bullish): view symbol, kind (forex, commodity, crypto, index, rates, vol), market, or trending tags. Use for 'what is the news mood on X'. Returns found:false instead of a made-up score when coverage is thin. Not a trading signal.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "view": {
+            "type": "string",
+            "enum": [
+              "symbol",
+              "kind",
+              "market",
+              "trending"
+            ]
+          },
+          "symbol": {
+            "description": "Required for view='symbol'.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "kind": {
+            "description": "Required for view='kind'.",
+            "type": "string",
+            "enum": [
+              "forex",
+              "commodity",
+              "crypto",
+              "index",
+              "rates",
+              "vol"
+            ]
+          },
+          "window": {
+            "description": "Sentiment window for symbol, kind, or market views; defaults to 24h. Not accepted for trending.",
+            "type": "string",
+            "enum": [
+              "1h",
+              "4h",
+              "24h",
+              "7d",
+              "30d"
+            ]
+          },
+          "hours": {
+            "description": "Lookback for view='trending', default 24 hours. Not accepted for sentiment views.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 168
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "view"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_wire_latest",
+      "description": "Latest items from the EL7 Wire (EL7 Market Beats): a fast, short, bilingual market wire written by EL7, each item with an impact score 1-10, a label (breaking, news, analysis, opinion, press_release) and ticker chips. Use for 'what just moved' or to follow one ticker (symbol), a minimum impact, a word (q) or items since a time. Newest first; pages with next_cursor (pass it as before). Language falls back to the other; no source links exist, each url is the Wire page. Not the edited news stories — use el7_news_latest, el7_news_search and el7_news_story for those.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "description": "Only items tagged with this exact instrument symbol (e.g. NVDA, XAUUSD).",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9^.=\\-]{1,20}$"
+          },
+          "min_impact": {
+            "default": 1,
+            "description": "Minimum impact score (1-10).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "q": {
+            "description": "Word search over the item titles and bodies (Arabic and English).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "since": {
+            "description": "Only items published or updated after this ISO date or timestamp.",
+            "type": "string",
+            "maxLength": 40
+          },
+          "before": {
+            "description": "Cursor from a previous next_cursor; returns the next older page. Keep the same filters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_calendar_events",
+      "description": "Calendar events for a named window or a from/to range (max 31 days), with forecast, previous (the prior release as revised) and surprise z-score; revised is that release's original first print. Filter by country, currency, impact, category, indicator or status; pages with next_cursor. Use for 'what is on this week'. Oversized ranges are refused, not truncated: narrow the dates (a lower limit does not help). Items carry typed sources; agency links are reference pages, not per-reading provenance. No prices, AI commentary or predictions. One release in detail: el7_calendar_event.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "window": {
+            "description": "A named calendar window resolved in `tz`; choose this OR from/to.",
+            "type": "string",
+            "enum": [
+              "today",
+              "tomorrow",
+              "this_week",
+              "next_week"
+            ]
+          },
+          "from": {
+            "description": "Start day, inclusive, YYYY-MM-DD (an ISO datetime is read as its UTC day). Optional on its own: from only = `from` plus 30 days. Total window is at most 31 days.",
+            "type": "string",
+            "maxLength": 40
+          },
+          "to": {
+            "description": "End day, inclusive, YYYY-MM-DD (an ISO datetime is read as its UTC day). Optional on its own: to only = the 31 days ending at `to`. Total window is at most 31 days.",
+            "type": "string",
+            "maxLength": 40
+          },
+          "tz": {
+            "default": "UTC",
+            "description": "IANA timezone used to resolve `window` boundaries (e.g. 'Asia/Dubai'). Ignored when `from`/`to` are given.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "countries": {
+            "description": "ISO country codes to include.",
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2}$"
+            }
+          },
+          "currencies": {
+            "description": "Currency codes (e.g. 'EUR') — resolved to their issuing countries and merged with `countries`.",
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{3}$"
+            }
+          },
+          "impact": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          },
+          "category": {
+            "minItems": 1,
+            "maxItems": 11,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "inflation",
+                "employment",
+                "growth",
+                "housing",
+                "manufacturing",
+                "trade",
+                "consumer",
+                "government",
+                "central_bank",
+                "energy",
+                "other"
+              ]
+            }
+          },
+          "event_type": {
+            "minItems": 1,
+            "maxItems": 7,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "data_release",
+                "rate_decision",
+                "speech",
+                "auction",
+                "holiday",
+                "report",
+                "meeting"
+              ]
+            }
+          },
+          "indicator": {
+            "description": "Canonical indicator slug — restricts results to that one series.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "status": {
+            "description": "'released' = items whose `status` is 'released' (an actual is in, or a past speech/meeting/holiday/auction); 'upcoming' = every other status (upcoming, imminent, just_released, pending, delayed, significantly_delayed).",
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "released"
+            ]
+          },
+          "limit": {
+            "default": 100,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "cursor": {
+            "description": "Opaque cursor bound to this resolved window and the same filters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_calendar_event",
+      "description": "Full detail of one calendar event, by UUID or by indicator slug plus date (latest_release, next_release or YYYY-MM-DD). Optional include: changes, details, news, stats, history. previous is the prior release's current (revised) value; revised is its originally published value before the revision, null when unrevised. Use after el7_calendar_events, or for 'when is the next CPI and what is expected'. Agency links are reference pages, not per-reading provenance. No AI predictions or raw provider payloads. A long series: el7_calendar_history.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "id": {
+            "description": "Calendar event UUID.",
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "indicator": {
+            "description": "Indicator slug — use with `date`.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "date": {
+            "description": "latest_release (latest is its compatibility alias), next_release, or a UTC calendar date YYYY-MM-DD; use with indicator.",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "latest",
+                  "latest_release",
+                  "next_release"
+                ]
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "include": {
+            "description": "Extra sections to attach. Omit for the core fields only.",
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "changes",
+                "details",
+                "news",
+                "stats",
+                "history"
+              ]
+            }
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_calendar_indicator",
+      "description": "Looks up one economic indicator by slug, or by name or alias when the slug is unknown (up to 10 candidates): methodology, agency, schedule, market-impact guidance, related indicators, next releases and historical statistics. Use first to turn 'US unemployment' into a slug for the other calendar tools. source_url is a stored agency reference or null, not evidence of where a reading came from. No AI content or price correlations.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "query": {
+            "description": "Free-text name or alias search, used when `slug` is unknown.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{2}$"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_calendar_history",
+      "description": "Chronological actual, forecast and previous readings of one indicator, with the first print and a revision flag, paged by cursor. Use for 'how has CPI evolved' or the last N releases. Agency links are references, not per-reading provenance. Not for the upcoming release — use el7_calendar_event; for beats and misses across a country use el7_calendar_surprise.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "indicator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "Canonical indicator slug."
+          },
+          "from": {
+            "description": "Inclusive lower bound, YYYY-MM-DD.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Inclusive upper bound, YYYY-MM-DD.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 60,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "cursor": {
+            "description": "Opaque keyset cursor tied to indicator and date bounds.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "indicator"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_calendar_surprise",
+      "description": "Economic Surprise Index per country (weighted beat or miss versus consensus, with regime), or a per-country daily heatmap of surprise z-scores over 30 or 90 days. The index view always returns both the 30d and 90d figures; window only orders countries by event count. Use for 'is the US economy beating forecasts'. A computed aggregate, no agency provenance. One indicator's readings: el7_calendar_history.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "view": {
+            "type": "string",
+            "enum": [
+              "index",
+              "heatmap"
+            ]
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{2}$"
+          },
+          "window": {
+            "default": "90d",
+            "type": "string",
+            "enum": [
+              "30d",
+              "90d"
+            ]
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "view"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_calendar_country",
+      "description": "Snapshot of one country: profile, central bank policy rate and last decision, key indicator stats, high-impact events in the next 14 days and recent releases. Use for 'how is the UK economy doing'. Only released values count; an unknown policy rate is null. The US policy rate is the upper bound of the Fed's target range. No exchange rates, index quotes, AI briefs or health score. Israel is not covered.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "code": {
+            "description": "ISO country code, e.g. 'SA', 'US'.",
+            "type": "string",
+            "pattern": "^[A-Za-z]{2}$"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_overview",
+      "description": "Policy rate, last change, any decided-but-not-effective change, the latest decision (tone, vote split, dissent) and the next meeting dates for ONE bank (fed, ecb, boe, boj, boc, rba, rbnz, snb). Start here for 'where is the rate' or 'when do they meet'. meeting_date is the decision day for every bank (the text gives the Fed's two-day span). Decision announcement and press-conference times are in el7_calendar_events (category central_bank). History: el7_cb_decisions. Statement text: el7_cb_document.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_decisions",
+      "description": "Rate-decision history of ONE central bank, newest first: hike, cut or hold, size in bps, rates after, tone score, vote split, dissenters and EL7's headline (English requests get English: a stored English headline, else one built from the decision fields). Use for 'what did the bank do at its last meetings' or to spot a cycle. It scans only the latest 200 decisions before applying from/to, so an old window can come back empty. Statement text: el7_cb_document; what changed: el7_cb_statement_diff.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "from": {
+            "description": "Earliest meeting date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "to": {
+            "description": "Latest meeting date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "limit": {
+            "default": 12,
+            "description": "Maximum decisions to return (default 12, max 50).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_documents",
+      "description": "Lists a bank's documents of one kind, newest first: statement, minutes, press_conference, speech (incl. Fed testimony) or report. Each row has id, date, speaker, tone score and whether full text is stored. Use to find a document id, then el7_cb_document. SNB has no minutes; only Fed, BoE, BoC, RBA and RBNZ have reports.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "statement",
+              "minutes",
+              "press_conference",
+              "speech",
+              "report"
+            ],
+            "description": "Document kind: statement (decision statement), minutes (minutes/accounts), press_conference, speech (incl. Fed testimony) or report (e.g. MPR/FSR/SoMP)."
+          },
+          "from": {
+            "description": "Earliest document date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "to": {
+            "description": "Latest document date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "speaker": {
+            "description": "Optional case-insensitive speaker-name filter (speeches and press conferences).",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "limit": {
+            "default": 15,
+            "description": "Maximum documents (default 15, max 50).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank",
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_document",
+      "description": "One central bank document in full: official English text, EL7's Arabic translation where stored, tone score, speaker, release time and source link. Pass the id from el7_cb_documents or el7_cb_decisions, or a date. Cut at max_chars (raise to 120000 for minutes). Not for 'what changed' — use el7_cb_statement_diff.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "statement",
+              "minutes",
+              "press_conference",
+              "speech",
+              "report"
+            ],
+            "description": "Document kind: statement (decision statement), minutes (minutes/accounts), press_conference, speech (incl. Fed testimony) or report (e.g. MPR/FSR/SoMP)."
+          },
+          "id": {
+            "type": "string",
+            "description": "Document id (uuid) from el7_cb_documents, or a YYYY-MM-DD meeting/release date."
+          },
+          "max_chars": {
+            "default": 30000,
+            "description": "Maximum characters of each text field (1000-120000, default 30000).",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank",
+          "kind",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_press_conference_qa",
+      "description": "The journalist questions and the answers of one press conference, in order, with questioner, outlet, who answered, tone score and topics. Use for 'what was the chair asked'. Get the id from el7_cb_documents (kind press_conference). Paged by offset; each question and answer is cut at 4,000 characters. SNB has none stored. Topic tags are Arabic only.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "id": {
+            "type": "string",
+            "description": "Document id (uuid) from el7_cb_documents, or a YYYY-MM-DD meeting/release date."
+          },
+          "limit": {
+            "default": 15,
+            "description": "Q&A items to return (default 15, max 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "offset": {
+            "default": 0,
+            "description": "Items to skip, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_statement_diff",
+      "description": "What changed between a central bank statement (or minutes) and the previous one: sentences added and removed, share of text changed, tone-score delta and hawkish or dovish shift. Defaults to the latest; meeting_date picks another. Deterministic, no AI. Use after el7_cb_decisions to explain a tone shift.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "kind": {
+            "default": "statement",
+            "description": "Document kind to compare (default statement).",
+            "type": "string",
+            "enum": [
+              "statement",
+              "minutes"
+            ]
+          },
+          "meeting_date": {
+            "description": "Meeting date of the current document; default the latest (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_tone_ranking",
+      "description": "Ranks all eight central banks from most hawkish to most dovish by the tone score of their latest decision statement, with the previous score and the change. Use to compare policy stance across banks. Not for one bank's detail — use el7_cb_overview or el7_cb_statement_diff.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_previews",
+      "description": "EL7's pre-meeting preview briefs. Generated 1-3 days before each Fed, ECB, BoE, BoJ, BoC and RBNZ decision; RBA has no generator yet (SNB is not covered). Without slot_date it lists previews, flagging current ones (meeting not yet held, created within 45 days); with slot_date (or 'latest') it returns the brief: rate expectation, sections, scenarios and verdict, in Arabic. is_current:false = archived preview of a completed meeting; do not present it as preparation for the next one.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz"
+            ],
+            "description": "Bank whose preview to read: fed (FOMC), ecb, boe, boj, boc, rba or rbnz."
+          },
+          "slot_date": {
+            "description": "Meeting date of the preview (YYYY-MM-DD) or 'latest'. Omit to list.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 8,
+            "description": "Maximum previews when listing (default 8, max 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_sep",
+      "description": "The Fed's Summary of Economic Projections for one FOMC meeting (default latest): medians, central tendency and ranges for the fed funds rate, GDP, unemployment, PCE and core PCE by year, plus the dot plot. Use for the Fed's projected rate path. Fed only; for the current rate use el7_cb_overview.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "meeting_date": {
+            "description": "FOMC meeting date with an SEP; default the latest (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_beige_book",
+      "description": "The Fed's Beige Book as stored by EL7. Without report_date it lists editions with tone and headline; with report_date it returns that edition: national summary, EL7's summary, tone by theme and the twelve district summaries (each cut at max_chars; district=1-12 returns one in full). Use for the Fed's anecdotal read on the economy before an FOMC meeting.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "report_date": {
+            "description": "Beige Book release date; omit to list editions (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "limit": {
+            "default": 10,
+            "description": "Editions to list (default 10, max 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "max_chars": {
+            "description": "Characters kept of each district summary (200-20000; default 3000, or 20000 when district is set).",
+            "type": "integer",
+            "minimum": 200,
+            "maximum": 20000
+          },
+          "district": {
+            "description": "Return only this Fed district (1-12), for the longer text.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_balance_sheet",
+      "description": "Central bank balance-sheet data. Fed: weekly series (Treasuries, MBS, reserves, reverse repo, TGA), M$ or B$ per series (CURRCIR is discontinued on FRED). ECB: weekly Eurosystem statement (total assets, APP+PEPP holdings, bank reserves), M EUR. BoE: weekly report (reserves, notes, repo facilities), M GBP. BoJ: month-end accounts (total assets, JGBs, ETFs, current deposits), M JPY. Each series has level and change vs the prior observation; pass series_id for its history. SNB, BoC, RBA, RBNZ: release snapshots. Use for QT, QE and liquidity questions.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "series_id": {
+            "description": "Fed, ECB, BoE, BoJ: series id for a history window (e.g. WALCL); call without it to list series ids.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.]{2,40}$"
+          },
+          "weeks": {
+            "default": 26,
+            "description": "History points, or snapshot rows for other banks (default 26, max 260).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 260
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_meeting_dossier",
+      "description": "EL7's verified meeting room for ONE central-bank meeting, as members see it on el7.ai: headline, findings ranked by importance, and what changed versus the previous meeting, each with the official English quote checked word-for-word. room: statement (default), minutes (ECB: accounts), presser, outlook (BoJ) or beige_book (Fed). Latest meeting by default; recent_meeting_dates lists others. Text is capped and lists cut at max_points / max_changes (totals returned). Analysis is Arabic unless a row says language en. Full text: el7_cb_document; wording diff: el7_cb_statement_diff.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ],
+            "description": "Central bank: fed, ecb, boe, boj, boc, rba, rbnz or snb."
+          },
+          "room": {
+            "default": "statement",
+            "description": "Which room: statement (decision statement), minutes (minutes / ECB accounts), presser (press conference), outlook (BoJ outlook report only) or beige_book (Fed only). Default statement.",
+            "type": "string",
+            "enum": [
+              "statement",
+              "minutes",
+              "presser",
+              "outlook",
+              "beige_book"
+            ]
+          },
+          "meeting_date": {
+            "description": "Meeting date (YYYY-MM-DD) as listed in recent_meeting_dates. Omit for the latest verified room.",
+            "type": "string"
+          },
+          "max_points": {
+            "default": 8,
+            "description": "Most important findings to return (default 8, max 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "max_changes": {
+            "default": 8,
+            "description": "Changes versus the previous meeting to return (default 8, max 25).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 25
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_projections",
+      "description": "Official forecast tables as on el7.ai. bank=ecb: ECB staff projections for real GDP, HICP, core HICP (ex energy and food) and unemployment per calendar year. bank=boj: Outlook Report forecasts for real GDP, CPI and CPI ex fresh food and energy per fiscal year (April-March): median of Policy Board members with low-high range. Latest vintage by default (vintage=YYYY-MM-DD from available_vintages); compare_previous adds the prior vintage's value and the change. Fed SEP: use el7_cb_sep.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "type": "string",
+            "enum": [
+              "ecb",
+              "boj"
+            ],
+            "description": "ecb (ECB staff projections) or boj (Bank of Japan Outlook Report forecasts). For the Fed use el7_cb_sep."
+          },
+          "vintage": {
+            "description": "Vintage date (YYYY-MM-DD) as listed in available_vintages: ECB publication or meeting date, BoJ report meeting date. Omit for the latest.",
+            "type": "string"
+          },
+          "compare_previous": {
+            "default": true,
+            "description": "Also return the previous vintage's value for each year and the change (default true).",
+            "type": "boolean"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "bank"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cb_qa_search",
+      "description": "Semantic search ACROSS every stored press-conference Q&A of the Fed, ECB, BoE and BoJ: which journalist questions, at which meetings, touched a topic, and what the chair answered. Query in Arabic or English; filter by banks and meeting dates. Returns question and answer excerpts, questioner, who answered, meeting date and a link to the question on el7.ai, at most two per meeting. A match is related text, not proof of a quote. To read one conference in order use el7_cb_press_conference_qa.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 300,
+            "description": "Topic or question, in Arabic or English (e.g. 'balance sheet runoff', «التضخم في الخدمات»)."
+          },
+          "banks": {
+            "description": "Limit to these banks: fed, ecb, boe, boj (default all four).",
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "fed",
+                "ecb",
+                "boe",
+                "boj"
+              ]
+            }
+          },
+          "from": {
+            "description": "Earliest meeting date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "to": {
+            "description": "Latest meeting date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "limit": {
+            "default": 6,
+            "description": "Questions to return (default 6, max 10); at most two per meeting.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_people_search",
+      "description": "Finds people EL7 tracks (central bank governors and committee members, officials) by name or institution, with role, voter status and hawk/dove score (higher is more hawkish). Use to resolve a name to a slug or list a bank's board. Then el7_person for the profile, or el7_people_cb_members for whole rosters.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "description": "Name search (English or Arabic, partial match). Omit to browse by filters.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "institution": {
+            "description": "Institution code filter, e.g. fed, ecb, boe, boj.",
+            "type": "string",
+            "pattern": "^[a-z0-9_]{2,20}$"
+          },
+          "person_type": {
+            "description": "Filter by person type, e.g. central_banker or politician.",
+            "type": "string",
+            "enum": [
+              "central_banker",
+              "government_official",
+              "corporate_leader",
+              "fund_manager",
+              "journalist",
+              "economist",
+              "politician",
+              "other"
+            ]
+          },
+          "active_only": {
+            "default": true,
+            "description": "Only people with an active role (default true).",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 15,
+            "description": "Maximum people (default 15, max 50).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "People to skip, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_person",
+      "description": "One person's EL7 profile: bio, roles, voter status, hawk/dove score and its history, recent speeches, recorded policy votes and news mentions. Use after el7_people_search gives a slug, e.g. to judge how a committee member's stance has moved before a meeting.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,120}$",
+            "description": "Person slug from el7_people_search (e.g. jerome-powell)."
+          },
+          "months": {
+            "default": 6,
+            "description": "Months of hawk/dove score history (default 6, max 36).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 36
+          },
+          "limit": {
+            "default": 10,
+            "description": "Maximum speeches, votes and news mentions each (default 10, max 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_people_cb_members",
+      "description": "Active policy-setting members of each central bank (or one) with role, voter status, hawk/dove score (null = no recent scored speech, not neutral; the text states how many are scored), speech count and latest speech, plus each bank's average over the scored. Use for 'who is the most hawkish on the FOMC' or 'who votes this year'. Then el7_person for one member.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "description": "One bank (fed, ecb, boe, boj, boc, rba, rbnz, snb). Omit for every bank.",
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb",
+              "boe",
+              "boj",
+              "boc",
+              "rba",
+              "rbnz",
+              "snb"
+            ]
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cot_markets",
+      "description": "Directory of the ~100 CFTC Commitments of Traders markets EL7 tracks, each with CFTC code, symbol, category, the 0-100 COT index, conviction and speculator stats. conviction = signal strength (how extreme positioning is: z-score and percentile), the /cot leaderboard score, the same number el7_cot_market_detail returns. latest_report_date = Tuesday positions date (published Friday). trend_direction = 4-week vs 13-week average net; momentum_class = latest week only. Use to find a market's code, or sort for the most crowded lists. Next: el7_cot_positioning.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "category": {
+            "description": "Filter by market category (currencies, indices, rates, crypto, energy, metals, grains, softs, wood).",
+            "type": "string",
+            "enum": [
+              "currencies",
+              "indices",
+              "rates",
+              "crypto",
+              "energy",
+              "metals",
+              "grains",
+              "softs",
+              "wood"
+            ]
+          },
+          "report_type": {
+            "description": "Filter by CFTC report type: tff (financial futures) or disaggregated (commodities).",
+            "type": "string",
+            "enum": [
+              "tff",
+              "disaggregated"
+            ]
+          },
+          "search": {
+            "description": "Case-insensitive text match on market name (English/Arabic), symbol or CFTC code, e.g. 'gold', 'EUR', '088691'.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "sort_by": {
+            "default": "default",
+            "description": "Ranking: default (category, symbol), cot_index (0-100 positioning index of the main speculator group: leveraged funds for financial futures, managed money for commodities; the website heatmap uses the legacy non-commercial index, so its values differ), conviction (EL7 signal-strength score 0-100: |1y z-score| plus percentile extremeness, the /cot leaderboard number; el7_cot_market_detail returns the same score), z_score (1y z-score), percentile, wow_change. Non-default sorts rank across all matching markets before the limit.",
+            "type": "string",
+            "enum": [
+              "default",
+              "cot_index",
+              "conviction",
+              "z_score",
+              "percentile",
+              "wow_change"
+            ]
+          },
+          "sort_order": {
+            "default": "desc",
+            "description": "Direction for sort_by (default desc: highest first). Ignored for sort_by=default.",
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "description": "Maximum markets to return (1-120, default 20). Use 120 with sort_by to get the full leaderboard.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cot_positioning",
+      "description": "One market's CFTC positioning: latest long, short and net by trader group, weekly change, 0-100 COT index, z-scores, percentile, momentum, plus up to 10 years of weekly history. lens=combined adds options. Use to judge how crowded a market is. report_date is the Tuesday the positions are as of; the CFTC publishes them the following Friday, the date el7.ai labels the report, so give both. trend_direction = 4-week vs 13-week average net; momentum_class = latest week only. Not a price feed. Codes from el7_cot_markets. Structure and concentration: el7_cot_market_detail.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "market": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "CFTC contract code (e.g. '088691' for gold), symbol (e.g. 'GC', 'EUR/USD'), currency code (e.g. 'EUR', 'JPY') or market name (e.g. 'Gold'). Find codes with el7_cot_markets."
+          },
+          "weeks": {
+            "default": 12,
+            "description": "Weekly reports of history to return (1-520 = 10 years, default 12). Series above roughly 300 weeks are thinned to every 2nd/3rd week to fit the response limit; history_every_n_weeks says by how much.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 520
+          },
+          "lens": {
+            "default": "futures",
+            "description": "futures = futures-only (default, has z-score/index per week); combined = futures + options positions per trader group (disaggregated and TFF markets only; z-score/index history is not computed for combined).",
+            "type": "string",
+            "enum": [
+              "futures",
+              "combined"
+            ]
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "market"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cot_weekly",
+      "description": "Weekly COT digest for one report date (Tuesday positions, published Friday): biggest speculator changes vs open interest, net flips, extreme positioning, plus a summary of the weekly report. net_spec_position = leveraged funds (financial futures) or managed money (commodities); ai_summary quotes legacy non-commercial, so its numbers differ. extreme_long/short = top/bottom 10% of the market's own history, not net sign. Detail: el7_cot_positioning, el7_cot_analysis.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "report_date": {
+            "description": "COT report date (the Tuesday positions are as of), YYYY-MM-DD. Omit for the latest report; a date between releases resolves to the newest report on or before it.",
+            "type": "string"
+          },
+          "category": {
+            "description": "Restrict every section to one market category.",
+            "type": "string",
+            "enum": [
+              "currencies",
+              "indices",
+              "rates",
+              "crypto",
+              "energy",
+              "metals",
+              "grains",
+              "softs",
+              "wood"
+            ]
+          },
+          "limit": {
+            "default": 10,
+            "description": "Maximum rows per section (1-25, default 10).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 25
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cot_market_detail",
+      "description": "Structure of one market's latest COT report: trader concentration, trader counts, options leg and hedge ratio, index-trader history, bank participation, cohort agreement, conviction (the same signal-strength score as el7_cot_markets; reading quality is in narrative and components), flow regime and data anomalies. Use after el7_cot_positioning for who holds the positions and how crowded they are. cohorts.items top4_share_pct is the whole-market top-4 gross concentration (CFTC publishes none per group), identical for every cohort. Blocks that do not apply are null.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "market": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "CFTC contract code (e.g. '088691' for gold), symbol (e.g. 'GC', 'EUR/USD'), currency code (e.g. 'EUR', 'JPY') or market name (e.g. 'Gold'). Find codes with el7_cot_markets."
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "market"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_cot_analysis",
+      "description": "EL7's stored AI-written COT analysis, never generated on request. With market: that market's weekly analysis (signal = EL7's read of the week's positioning change, not the sign of the net position; confidence; what to watch). Without: the full weekly report across markets (Arabic, capped at 12,000 characters). Use for EL7's view or narrative; numbers via el7_cot_positioning. el7_cot_weekly has only a summary.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "market": {
+            "description": "CFTC contract code (e.g. '088691'), symbol (e.g. 'GC') or exact market name (e.g. 'Gold'). Give it for EL7's per-market weekly AI analysis; omit it for the full weekly AI report across all markets.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "report_date": {
+            "description": "COT report date (Tuesday positions), YYYY-MM-DD. Omit for the latest; a date between releases resolves to the newest analysis on or before it.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 1,
+            "description": "Market mode only: how many weekly analyses to return, newest first (1-8, default 1).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "max_chars": {
+            "default": 12000,
+            "description": "Weekly-report mode only: maximum characters of report text (1000-12000, default 12000). The result says if it was truncated.",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 12000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_oil_inventories",
+      "description": "EIA weekly US oil stocks: commercial crude, Cushing and SPR (million barrels) with weekly change, versus the 5-year average and last year, plus product stocks. Use for crude draws and builds. Production and trade: el7_oil_supply; forecasts: el7_oil_outlook.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "weeks": {
+            "default": 12,
+            "description": "Weeks of crude inventory history to return (1-104, default 12).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 104
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_oil_supply",
+      "description": "EIA supply-side series: US crude production, refinery utilisation, supply and disposition, imports and exports (latest with change, or history for one series_id), top producing states, and the last Drilling Productivity Report (June 2024, discontinued). Use for US supply. Stocks: el7_oil_inventories. No prices.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "category": {
+            "default": "production",
+            "description": "EIA series group: production (crude output, refinery utilisation, supply and disposition) or imports.",
+            "type": "string",
+            "enum": [
+              "production",
+              "imports"
+            ]
+          },
+          "series_id": {
+            "description": "One EIA series id (as returned by this tool, e.g. PET.WCRFPUS2.W) to get its history. Omit for the latest value of every series in the category.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "periods": {
+            "default": 12,
+            "description": "History length in periods when series_id is given (1-60, default 12).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_oil_outlook",
+      "description": "The agencies' oil forecasts as stored: IEA Oil Market Report, EIA Short-Term Energy Outlook and OPEC's Monthly Report (demand, supply, balance, stocks; million b/d), latest first. Use to compare agency views or where the balance is heading. No price forecasts. EIA opec_production is OPEC crude only (world_supply is total liquids). OPEC non_opec_supply is non-DoC liquids (outside OPEC+); call_on_opec is demand for OPEC+ (DoC) crude; OPEC prints no current-year OPEC production average. OPEC output: el7_oil_opec.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "sources": {
+            "default": [
+              "iea",
+              "eia",
+              "opec"
+            ],
+            "description": "Which agencies to include: iea (Oil Market Report), eia (Short-Term Energy Outlook), opec (Monthly Oil Market Report). Default all three.",
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "iea",
+                "eia",
+                "opec"
+              ]
+            }
+          },
+          "reports": {
+            "default": 1,
+            "description": "How many of each agency's latest report editions to return (1-6, default 1).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_oil_opec",
+      "description": "OPEC and OPEC+ data: monthly crude production by country (thousand b/d) against required levels (quotas), the latest quotas and voluntary cuts, the OPEC Reference Basket price (OPEC's own series), and the meeting schedule with decisions. Use for over- or under-production and upcoming ministerial meetings. Production rows carry source: secondary (OPEC's assessment, basis of quotas and totals) or direct (the country's own report; never add the two); a quarter averaged from these months can differ slightly from OPEC's published quarter. Forecasts: el7_oil_outlook.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "include": {
+            "default": [
+              "production",
+              "quotas",
+              "basket",
+              "meetings"
+            ],
+            "description": "Sections to return: production (monthly crude output by country), quotas (latest production targets), basket (OPEC Reference Basket price), meetings (OPEC/OPEC+ ministerial meetings). Default all.",
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "production",
+                "quotas",
+                "basket",
+                "meetings"
+              ]
+            }
+          },
+          "country": {
+            "description": "Three-letter country code (e.g. SAU, RUS, IRQ) to filter production and quotas.",
+            "type": "string",
+            "pattern": "^[A-Za-z]{3}$"
+          },
+          "months": {
+            "default": 3,
+            "description": "Months of production history ending at the latest stored month (1-24, default 3).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24
+          },
+          "basket_days": {
+            "default": 30,
+            "description": "Daily OPEC basket price observations to return (1-90, default 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 90
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_oil_country_stats",
+      "description": "Monthly crude balance per country from the JODI-Oil database (~60 countries, about two months behind): production, refinery intake, imports and exports in thousand b/d, closing stocks in million barrels. Use to compare countries' crude balances. No product demand. Global picture: el7_oil_outlook; US weekly: el7_oil_inventories.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "country": {
+            "description": "Country code, two-letter (SA, US, CN) or three-letter (SAU, USA, CHN). Omit for every reporting country.",
+            "type": "string",
+            "pattern": "^[A-Za-z]{2,3}$"
+          },
+          "months": {
+            "default": 6,
+            "description": "Months of history ending at the latest month stored for the country (1-24, default 6). Without a country at most 3 months are returned.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_gold_overview",
+      "description": "EL7's Gold Conditions Index: a 0-100 composite of how supportive macro and positioning are for gold, with regime label and six weighted components (real yields, dollar with the Fed broad dollar index level, COT positioning, breakevens, VIX/GVZ, GLD flows). Use first for a quick read on the gold backdrop. No gold prices. Drill down with the other el7_gold_* tools.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_gold_flows",
+      "description": "Gold flows: GLD ETF holdings in tonnes with window net flow, London vault holdings (monthly), and CFTC managed-money positioning in gold futures. Use to see whether investors are accumulating or releasing gold. COMEX warehouse stocks are not available (feed retired 2026-07-19; comex is null). No prices. Composite backdrop: el7_gold_overview; deeper COT: el7_cot_positioning (code 088691).",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "include": {
+            "default": [
+              "etf",
+              "vault",
+              "cot"
+            ],
+            "description": "Sections: etf (GLD holdings and flows), vault (London vault holdings, monthly), cot (CFTC managed-money positioning in gold futures), comex (retired: always null). Default etf, vault, cot.",
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "etf",
+                "comex",
+                "vault",
+                "cot"
+              ]
+            }
+          },
+          "days": {
+            "default": 30,
+            "description": "Window in trading days for the GLD net-flow summary (1-365, default 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "history_points": {
+            "default": 30,
+            "description": "Most recent observations to list per series (1-90, default 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 90
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_gold_reserves",
+      "description": "Central bank gold holdings (IMF International Liquidity, monthly; China's newest month from SAFE): ranking of the largest holders with tonnes, month-on-month change and share of reserves, or one country's monthly history. A stored monthly snapshot, not a live feed: holders report on different months, so each ranking item carries its own report_date (each holder's latest month) and the top-level report_date is only the newest of them; history has only the periods stored. Use for who holds the most gold. Demand by quarter: el7_gold_supply_demand; investor flows: el7_gold_flows.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "country": {
+            "description": "Two-letter country code (US, DE, CN, SA, TR, IN...). Omit for the latest ranking of all holders; with a country you get that country's reserve history.",
+            "type": "string",
+            "pattern": "^[A-Za-z]{2}$"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Holders to return in the ranking (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "months": {
+            "default": 24,
+            "description": "Periods of history when country is given (1-120, default 24).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_gold_supply_demand",
+      "description": "Quarterly global gold balance (tonnes, World Gold Council), newest first. total_supply and total_demand are WGC's own totals: supply adds net producer hedging, demand adds jewellery inventory and 'OTC and other' (named in the summary), so they balance and surplus_deficit is ~0 by construction. jewelry_tonnes is jewellery consumption. Before 2022 the totals are null. Use for what drives demand. Holdings: el7_gold_reserves; ETF flows: el7_gold_flows.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "quarters": {
+            "default": 8,
+            "description": "Number of most recent quarters (1-40, default 8).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 40
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_gold_macro",
+      "description": "Macro series EL7 tracks as gold drivers (FRED): 10Y real yield, breakevens, Fed funds, M2, Fed balance sheet, CPI, Fort Knox reserves, gold-mining output; latest with change, or one series' history, optionally correlation with gold. Use for the rates and inflation backdrop. Dollar and volatility appear only inside el7_gold_overview.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "series_id": {
+            "description": "One macro series for its history: DFII10 (10Y real yield), T10YIE / T5YIE (breakeven inflation), DFF (effective Fed funds rate, not the target range), M2SL (M2), WALCL (Fed balance sheet), CPIAUCSL (CPI), FKKYGTA (Fort Knox gold), IPG21222S (gold-mining output index). Omit for the latest value of all.",
+            "type": "string",
+            "enum": [
+              "DFII10",
+              "T10YIE",
+              "T5YIE",
+              "DFF",
+              "M2SL",
+              "WALCL",
+              "CPIAUCSL",
+              "FKKYGTA",
+              "IPG21222S"
+            ]
+          },
+          "periods": {
+            "default": 30,
+            "description": "History length when series_id is given (1-120, default 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          },
+          "include_correlations": {
+            "default": false,
+            "description": "Also return the Pearson correlation of each macro series (including dollar and volatility) with gold over about one trading year. Slower; default false.",
+            "type": "boolean"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_research_list",
+      "description": "Lists EL7's published research articles (~280 on AI capex, central banks, energy, gold, crypto, macro), newest first, with verdict, date and link. Filter by text, sector or dates. Use to find what EL7 has published on a topic, then read it with el7_research_article. In English only articles with an English edition are listed.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "description": "Case-insensitive whole-word text to find in titles and excerpts (titles rank first); AI = artificial intelligence and Fed = Federal Reserve are treated as aliases, other synonyms are not. Arabic matches whole words (with common prefixes like ال/بال), not fragments inside other words. A bare ذهب (gold) skips the verb 'went' (أين ذهب, ذهب إلى, وذهب); other look-alike words can still match.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "sector": {
+            "description": "Filter to one research sector. Few articles carry a sector yet, so prefer `query` for topic search.",
+            "type": "string",
+            "enum": [
+              "ai",
+              "cb",
+              "energy",
+              "metals",
+              "crypto",
+              "deals",
+              "macro"
+            ]
+          },
+          "from": {
+            "description": "Published on or after this date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "to": {
+            "description": "Published on or before this date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging (use next_offset from the previous response).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_research_article",
+      "description": "Reads one EL7 research article as plain text (charts removed, tables flattened), paged: follow next_offset while truncated. English edition when lang is en and one exists, else the Arabic original (body_language says which). Slugs from el7_research_list.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,254}$",
+            "description": "Research article slug, e.g. 'ai-capex-power' (from el7_research_list)."
+          },
+          "max_chars": {
+            "default": 12000,
+            "description": "Maximum characters of article text to return (500-60000, default 12000). Long articles are paged with offset.",
+            "type": "integer",
+            "minimum": 500,
+            "maximum": 60000
+          },
+          "offset": {
+            "default": 0,
+            "description": "Character offset to start from; use next_offset from a truncated response to read the rest.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_insights_list",
+      "description": "Lists EL7 insights: market updates (weekly live coverage), education and tutorials, newest first. Filter by text, content_type, category, tag, series or dates. Research articles and interviews are excluded unless content_type or category is set to them (otherwise use el7_research_list and el7_interviews_list). Read one with el7_insight.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "description": "Case-insensitive whole-word text to find in titles and excerpts (titles rank first); AI = artificial intelligence and Fed = Federal Reserve are treated as aliases, other synonyms are not. Arabic matches whole words (with common prefixes like ال/بال), not fragments inside other words. A bare ذهب (gold) skips the verb 'went' (أين ذهب, ذهب إلى, وذهب); other look-alike words can still match.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "content_type": {
+            "description": "Hub section. Omit for market updates and education (research has its own tool).",
+            "type": "string",
+            "enum": [
+              "market_update",
+              "education",
+              "research"
+            ]
+          },
+          "category": {
+            "description": "Category slug, e.g. 'market-updates', 'education', 'product-tutorials'.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "tag": {
+            "description": "Tag slug.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "series": {
+            "description": "Series slug.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "from": {
+            "description": "Published on or after this date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "to": {
+            "description": "Published on or before this date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging (use next_offset from the previous response).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_insight",
+      "description": "Reads one EL7 insight (market update, live-coverage digest, education article) as plain text, paged like el7_research_article. Slugs from el7_insights_list. Research articles and interviews have their own tools.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,254}$",
+            "description": "Insight slug, e.g. 'live-coverage-2026-10-05' (from el7_insights_list)."
+          },
+          "max_chars": {
+            "default": 12000,
+            "description": "Maximum characters of article text to return (500-60000, default 12000). Long articles are paged with offset.",
+            "type": "integer",
+            "minimum": 500,
+            "maximum": 60000
+          },
+          "offset": {
+            "default": 0,
+            "description": "Character offset to start from; use next_offset from a truncated response to read the rest.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_interviews_list",
+      "description": "Lists EL7's published interviews and market conversations, newest first, with excerpt, date and link. Use to find an interview, then read it with el7_interview. Not for research articles or market updates.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "description": "Case-insensitive whole-word text to find in titles and excerpts (titles rank first); AI = artificial intelligence and Fed = Federal Reserve are treated as aliases, other synonyms are not. Arabic matches whole words (with common prefixes like ال/بال), not fragments inside other words. A bare ذهب (gold) skips the verb 'went' (أين ذهب, ذهب إلى, وذهب); other look-alike words can still match.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "from": {
+            "description": "Published on or after this date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "to": {
+            "description": "Published on or before this date (YYYY-MM-DD).",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging (use next_offset from the previous response).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_interview",
+      "description": "Reads one EL7 interview as plain text, paged like el7_research_article. Slugs from el7_interviews_list.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,254}$",
+            "description": "Interview slug (from el7_interviews_list)."
+          },
+          "max_chars": {
+            "default": 12000,
+            "description": "Maximum characters of article text to return (500-60000, default 12000). Long articles are paged with offset.",
+            "type": "integer",
+            "minimum": 500,
+            "maximum": 60000
+          },
+          "offset": {
+            "default": 0,
+            "description": "Character offset to start from; use next_offset from a truncated response to read the rest.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_insider_trades",
+      "description": "Recent open-market insider purchases and sales filed on SEC Form 4, newest first: insider, company, shares, price, value. Filter by ticker, insider, side, minimum value, window, executives only. Derivative, amended and placeholder-ticker lines are excluded. No AI-written commentary. One insider: el7_insider. Congress members: el7_congress_trades.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "description": "Issuer ticker, e.g. 'NVDA'. Omit for market-wide.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12,
+            "pattern": "^[A-Za-z0-9.\\-]+$"
+          },
+          "insider": {
+            "description": "Part of an insider's name, e.g. 'Huang'. Matches EL7 insider profiles; use el7_insider with the returned insider_slug for full detail.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "side": {
+            "default": "both",
+            "description": "'buy' = open-market purchases (code P), 'sell' = open-market sales (code S), 'both' = either.",
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell",
+              "both"
+            ]
+          },
+          "min_value_usd": {
+            "description": "Only lines whose filed total value is at least this many USD.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000000000000
+          },
+          "days": {
+            "default": 30,
+            "description": "Look-back window in days, by transaction date (max 365).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "executives_only": {
+            "default": false,
+            "description": "Only filings with an officer or director among the reporting owners.",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (max 50). Newest first.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging (max 5000). When more rows exist the summary names the exact next offset; pass it with the same filters.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_insider",
+      "description": "One corporate insider's profile: role, lifetime buy and sell totals, companies, returns-based performance score, win rate and recent open-market trades. Use after el7_insider_trades gives an insider slug. No AI-written commentary. Not for Congress members — use el7_congress_member.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Insider profile slug as returned by el7_insider_trades (insider_slug), e.g. 'benioff-marc'."
+          },
+          "recent_trades": {
+            "default": 10,
+            "description": "How many of the insider's most recent open-market trades to include (0-25).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 25
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_congress_trades",
+      "description": "US Senate and House periodic transaction disclosures, newest filing first: member, party, ticker, buy or sell, dates, disclosure lag and the disclosed dollar BRACKET (never a point estimate). Filter by member, ticker, chamber, party, side, amount, window. One member: el7_congress_member. Corporate insiders: el7_insider_trades.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "member": {
+            "description": "Part of a member's name, e.g. 'Pelosi'.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "symbol": {
+            "description": "Ticker symbol the member traded, e.g. 'NVDA'.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12,
+            "pattern": "^[A-Za-z0-9.\\-]+$"
+          },
+          "chamber": {
+            "description": "Restrict to one chamber.",
+            "type": "string",
+            "enum": [
+              "senate",
+              "house"
+            ]
+          },
+          "party": {
+            "description": "Member party (from EL7's people records).",
+            "type": "string",
+            "enum": [
+              "democrat",
+              "republican",
+              "independent"
+            ]
+          },
+          "side": {
+            "default": "both",
+            "description": "'buy' = purchases, 'sell' = sales (full or partial), 'both' = all.",
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell",
+              "both"
+            ]
+          },
+          "min_amount_usd": {
+            "description": "Only trades whose disclosed bracket upper bound is at least this many USD.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "days": {
+            "default": 90,
+            "description": "Look-back window in days, by FILING date (max 730).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 730
+          },
+          "stocks_only": {
+            "default": true,
+            "description": "Only trades with a ticker (default). Set false to include funds, bonds and other assets without one.",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (max 50). Newest filing first.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging (max 5000). When more rows exist the summary names the exact next offset; pass it with the same filters.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_congress_member",
+      "description": "One Congress member's disclosed trading over a window: buy and sell counts, total disclosed brackets (ranges), most-traded tickers and latest trades. Accepts a name fragment or slug from el7_congress_trades; an ambiguous name returns candidate slugs.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "member": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120,
+            "description": "A member's EL7 people slug (e.g. 'jared-moskowitz', as returned in member_slug) or part of their name."
+          },
+          "days": {
+            "default": 365,
+            "description": "Look-back window in days by filing date for the summary and recent trades (max 1825).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1825
+          },
+          "recent_trades": {
+            "default": 10,
+            "description": "How many of the member's most recent trades to include (0-25).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 25
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "member"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_predictions_markets",
+      "description": "Lists prediction markets (Polymarket odds as stored by EL7) on rates, geopolitics, growth, commodities: title, category, end date, volume, liquidity and top outcomes with implied probability and one-day change. status active for live, resolved for the archive. One market in full: el7_prediction.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "status": {
+            "default": "active",
+            "description": "'active' = live markets still trading; 'resolved' = the archive of ended or closed markets (newest end date first).",
+            "type": "string",
+            "enum": [
+              "active",
+              "resolved"
+            ]
+          },
+          "category": {
+            "description": "Category slug, e.g. 'central_bank_rate', 'geopolitics', 'gdp_growth', 'commodity_price', 'crypto_price', 'employment'.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[a-z_]+$"
+          },
+          "search": {
+            "description": "Text to find in the market title (English or Arabic) or slug.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "sort": {
+            "default": "volume",
+            "description": "'volume' = most traded, 'ending_soon' = nearest end date, 'recent' = most recently updated odds. Ignored for status='resolved' (always newest end date first).",
+            "type": "string",
+            "enum": [
+              "volume",
+              "ending_soon",
+              "recent"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (max 50).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_prediction",
+      "description": "One prediction market in full: every outcome's implied probability, volume, liquidity, spread, open interest, last-day odds summary and resolution state and rules. Slug from el7_predictions_markets. These are market-implied probabilities, not EL7 forecasts.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Market slug as returned by el7_predictions_markets (slug), e.g. 'how-many-fed-rate-cuts-in-2026'."
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_strategies_list",
+      "description": "EL7's strategy library with each strategy's level (0 not tested, 1 backtest only, 2 cleared bar 1, 3 survived paper, or rejected) and the best cell that earned it. Strategies have no home market; the instrument filter matches only the original market. Backtested history, not a forecast. One strategy: el7_strategy; portfolios: el7_strategy_baskets.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "source": {
+            "default": "library",
+            "description": "'library' = strategies EL7's engine harvested (the default catalog tab); 'members' = strategies members authored and published.",
+            "type": "string",
+            "enum": [
+              "library",
+              "members"
+            ]
+          },
+          "query": {
+            "description": "Text to find in the strategy name, instrument or indicator list.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "indicator": {
+            "description": "Indicator slug the strategy uses, e.g. 'rsi'.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_]+$"
+          },
+          "timeframe": {
+            "description": "The strategy's own timeframe.",
+            "type": "string",
+            "enum": [
+              "1m",
+              "5m",
+              "15m",
+              "30m",
+              "1h",
+              "4h",
+              "1d",
+              "1w"
+            ]
+          },
+          "instrument": {
+            "description": "The strategy's original instrument (its first listed market). Strategies have no home: the level is earned by the best cell, named in best_cell.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9^.=\\-]+$"
+          },
+          "behaviour": {
+            "description": "Behaviour archetype classified from the strategy's logic.",
+            "type": "string",
+            "enum": [
+              "breakout",
+              "dip",
+              "reclaim",
+              "momentum",
+              "trend",
+              "cross",
+              "other"
+            ]
+          },
+          "min_level": {
+            "description": "Minimum level: 1 = backtest only or better, 2 = cleared bar 1 or better, 3 = survived paper.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "sort": {
+            "default": "level",
+            "description": "'level' = highest level first (then most bar-1 cells), 'newest' = latest published, 'name' = alphabetical.",
+            "type": "string",
+            "enum": [
+              "level",
+              "newest",
+              "name"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (max 50).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_strategy",
+      "description": "One published strategy: plain-language rules, indicators, level and best cell, headline backtest (trades, win rate, profit factor, return, drawdown) and the cross-market matrix, bar-1 cells first. Slug from el7_strategies_list. Backtests are historical and in-sample; read level and cells_bar1 before trusting a figure.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9._\\-]+$",
+            "description": "Strategy slug as returned by el7_strategies_list (slug)."
+          },
+          "cells": {
+            "default": 10,
+            "description": "How many cross-market cells to include (0-50), bar-1 cells first then by profit factor. Cells are every instrument x timeframe the strategy was backtested on, good and bad.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_strategy_baskets",
+      "description": "The strategy basket library: portfolios of legs ranked by level then yearly return over drawdown, with profit factor, drawdown, trades and out-of-sample re-pick years. Filter by shape, level or strategy slug. In-sample history. One basket: el7_strategy_basket. Single strategies: el7_strategies_list.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "shape": {
+            "default": "markets",
+            "description": "'markets' = one strategy across several markets, 'strategies' = several strategies on one market, 'mixed' = both.",
+            "type": "string",
+            "enum": [
+              "markets",
+              "strategies",
+              "mixed"
+            ]
+          },
+          "min_level": {
+            "description": "Minimum level: 1 = backtest only or better, 2 = held up after the pick.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2
+          },
+          "strategy_slug": {
+            "description": "Only baskets that include this strategy as a leg (slug from el7_strategies_list).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9._\\-]+$"
+          },
+          "limit": {
+            "default": 15,
+            "description": "Rows to return (max 50).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_strategy_basket",
+      "description": "One library basket in full: legs with strategy names, headline metrics (trades, win rate, profit factor, CAGR, drawdown, exposure), each market's contribution and out-of-sample re-pick years. Id from el7_strategy_baskets. Summary figures only, no raw equity series.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "description": "Basket id from el7_strategy_baskets."
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_market_regime",
+      "description": "EL7's read of the market state. No arguments or asset_class: composite volatility regime (low to extreme) and momentum breadth per asset class (breadth older than 36h is omitted, breadth_stale=true). With symbol: that instrument's trend, volatility percentile, returns over 1w to 12m, distance from the 50/200-day averages and drawdown. Derived values only, no prices or VIX level. as_of is the newest of the VIX date and the breadth refresh time; the two can differ and both are shown (vix.as_of, breadth_refreshed_at).",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "asset_class": {
+            "description": "Restrict the market-wide view to one asset class: forex, commodity, index, stock, etf, fund or crypto (plurals like stocks / indices accepted). Omit for all. Cannot be combined with `symbol`.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24
+          },
+          "symbol": {
+            "description": "A single instrument (XAUUSD, EURUSD, BTCUSD, ^GSPC, AAPL; aliases accepted: US500 / S&P 500 → ^GSPC, NAS100 / NDX → ^NDX, USOIL / WTI → CLUSD, BRENT → BZUSD, XAU/USD → XAUUSD, VIX → ^VIX, GOLD, BTC) for its own trend and volatility regime. Cannot be combined with `asset_class`.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9^.=_&\\/ -]+$"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_market_seasonality",
+      "description": "How an instrument has performed in each calendar month over the past N years: average and median return %, win rate, best and worst month, sample size. Use for 'is October usually weak for gold'. Returns percentages, no prices. Current trend: el7_market_regime.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9^.=_&\\/ -]+$",
+            "description": "Instrument symbol (XAUUSD, EURUSD, BTCUSD, ^GSPC, AAPL; aliases like GOLD/BTC accepted)."
+          },
+          "years": {
+            "default": 10,
+            "description": "How many years of history to average over (3-20, default 10).",
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 20
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_market_correlations",
+      "description": "Pearson correlation of daily returns between instruments over 30, 90, 180 or 365 days, as pairs from most positive to most negative with the strongest five each way. Pairs with under 10 shared days are dropped; symbols with no history are listed in symbols_without_data. Use for which assets move together or diversification. Correlations only, never prices.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbols": {
+            "description": "2-12 instrument symbols. Omit for EL7's default cross-asset set (gold, dollar index, crude, BTC, ETH, EURUSD, GBPUSD, USDJPY, S&P 500).",
+            "minItems": 2,
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 24,
+              "pattern": "^[A-Za-z0-9^.=_&\\/ -]+$"
+            }
+          },
+          "window_days": {
+            "default": 90,
+            "description": "Look-back window in calendar days: 30, 90, 180 or 365.",
+            "anyOf": [
+              {
+                "type": "number",
+                "const": 30
+              },
+              {
+                "type": "number",
+                "const": 90
+              },
+              {
+                "type": "number",
+                "const": 180
+              },
+              {
+                "type": "number",
+                "const": 365
+              }
+            ]
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_event_reaction",
+      "description": "Event-study statistics in % moves: mode indicator (how an asset, default gold, moved after FOMC, CPI, NFP, GDP and similar releases), surprise (biggest data surprises and next-day move) or ranking (event types by surprise and reaction). Use for 'what does gold do after hot CPI'. Readings themselves: el7_calendar_event.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "mode": {
+            "default": "indicator",
+            "description": "indicator: how the asset moved after each release of one event (needs `event`). surprise: the largest data surprises (by |z-score|) and the asset's move the next day (`event` optional filter). ranking: which event types surprise most and how the asset reacts on average.",
+            "type": "string",
+            "enum": [
+              "indicator",
+              "surprise",
+              "ranking"
+            ]
+          },
+          "event": {
+            "description": "Event shortcut (fomc, cpi, nfp, gdp, jobless claims, pce, ecb, boe, boj) or any part of a calendar event name (e.g. 'Retail Sales'). Required for mode=indicator.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "symbol": {
+            "default": "XAUUSD",
+            "description": "The asset whose reaction to measure (default XAUUSD). Aliases like GOLD/BTC accepted.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9^.=_&\\/ -]+$"
+          },
+          "country": {
+            "default": "US",
+            "description": "ISO country of the event (default US). Ignored for fomc.",
+            "type": "string",
+            "pattern": "^[A-Za-z]{2}$"
+          },
+          "since": {
+            "default": "2015-01-01",
+            "description": "Only events on/after this date, YYYY-MM-DD (not earlier than 2000-01-01; default 2015-01-01).",
+            "type": "string"
+          },
+          "window_days": {
+            "default": 5,
+            "description": "mode=indicator only: calendar days after the event at which the reaction is measured (1-30, default 5).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "decision_filter": {
+            "description": "mode=indicator with event=fomc only: keep meetings with this decision.",
+            "type": "string",
+            "enum": [
+              "hike",
+              "cut",
+              "hold"
+            ]
+          },
+          "dissent_only": {
+            "default": false,
+            "description": "mode=indicator with event=fomc only: keep meetings that had dissenters.",
+            "type": "boolean"
+          },
+          "min_abs_zscore": {
+            "default": 0,
+            "description": "mode=surprise only: minimum |surprise z-score|.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "min_events": {
+            "default": 5,
+            "description": "mode=ranking only: minimum events per event type.",
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 50
+          },
+          "limit": {
+            "default": 10,
+            "description": "Rows to return (1-30, default 10).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_market_cycle",
+      "description": "How an asset (default gold) performed in each Fed or ECB rate cycle: hiking, cutting and hold phases with dates, policy-rate change, duration and the asset's return, plus averages by type. Cycles with no end date are excluded and counted in excluded_open_ended_cycles. Use for 'what does gold do in a hiking cycle'. Single meetings: el7_event_reaction. Percentages only.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "bank": {
+            "default": "fed",
+            "description": "Central bank whose rate cycles to use (default fed; ECB cycles may be empty).",
+            "type": "string",
+            "enum": [
+              "fed",
+              "ecb"
+            ]
+          },
+          "cycle_type": {
+            "description": "Only cycles of this type.",
+            "type": "string",
+            "enum": [
+              "hiking",
+              "cutting",
+              "hold"
+            ]
+          },
+          "symbol": {
+            "default": "XAUUSD",
+            "description": "Asset whose performance during each cycle is measured (default XAUUSD).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9^.=_&\\/ -]+$"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_market_brief",
+      "description": "EL7's latest published AI market brief for an asset class (stocks, saudi, indices, forex, commodities, crypto), as on the website: headline, analysis, key takeaways, bullish, bearish or neutral signal, session and date. Stored text, nothing generated on request; speculator net figures are CFTC legacy non-commercial, not el7_cot_positioning's managed money. Use for 'what happened in forex today'. Volatility and breadth: el7_market_regime.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "asset_class": {
+            "type": "string",
+            "enum": [
+              "stocks",
+              "saudi",
+              "indices",
+              "forex",
+              "commodities",
+              "crypto"
+            ],
+            "description": "Which market's brief: stocks (US), saudi (Tadawul), indices, forex, commodities or crypto."
+          },
+          "date": {
+            "description": "Brief date, YYYY-MM-DD. Omit for the latest published brief.",
+            "type": "string"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "asset_class"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_stock_profile",
+      "description": "EL7's read of one company stock (US or Tadawul ticker only): overall score, seven factor axes as 0-100 percentiles, sector and industry rank, score change, technicals in %, counts of analyst upgrades and downgrades, badges. No price, market cap or ratios: give the returned el7.ai url for a price. Analyst price targets and ratings: el7_analyst_consensus. For a written analysis ALSO call el7_stock_analysis. Trend: el7_stock_score_history. ETFs and funds: el7_etf_profile. Indices, FX, crypto, commodities: el7_market_regime (symbol) or el7_market_brief.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9.^=_:$ -]+$",
+            "description": "One company ticker, e.g. AAPL, NVDA, BRK-B, or a Tadawul symbol such as 2222.SR. Not an ETF (el7_etf_profile), index, currency pair, crypto or commodity (el7_market_regime)."
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_sector_overview",
+      "description": "Ranks the 11 sectors (or ~150 industries) by cap-weighted EL7 score with the seven factor axes, tier and sector-ETF returns; slug adds the top stocks and EL7's written narrative (Arabic only). US only; for Tadawul use el7_stock_rank with market=sa. Scores and returns, no prices. A single stock: el7_stock_profile.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "scope": {
+            "default": "sector",
+            "description": "sector = the 11 market sectors; industry = the ~150 industries.",
+            "type": "string",
+            "enum": [
+              "sector",
+              "industry"
+            ]
+          },
+          "slug": {
+            "description": "A sector slug (technology, financial-services, healthcare, ...) or industry slug (software-infrastructure, ...) for the detail view with top stocks. Omit for the ranked list.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "limit": {
+            "default": 20,
+            "description": "List mode: rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "top_stocks": {
+            "default": 10,
+            "description": "Detail mode: how many top-scoring stocks to list (1-20, default 10).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_screener_presets",
+      "description": "Lists EL7's saved screener strategies (EL7 Leaders, Graham value, Buffett quality, Magic Formula, CAN SLIM, dividend growth, momentum) with their criteria as thresholds. Use to pick a preset id, then run it with el7_screener_run. Criteria are thresholds, not data about companies.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "group": {
+            "description": "Only presets from this group (founder, value, quality, growth, income, momentum, or card = the four headline strategy cards).",
+            "type": "string",
+            "enum": [
+              "founder",
+              "value",
+              "quality",
+              "growth",
+              "income",
+              "momentum",
+              "card"
+            ]
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_screener_run",
+      "description": "Runs a saved screener preset over the US stock universe and returns the matching stocks ranked by the preset's sort (usually EL7 score) with the seven factor axes and sector rank. No price, market cap or ratio returned. Preset ids from el7_screener_presets; drill into a result with el7_stock_profile.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "A preset id (e.g. el7Leaders, cheapQuality, magicFormula) or its page slug (e.g. el7-leaders, graham-value) from el7_screener_presets."
+          },
+          "scope": {
+            "default": "market",
+            "description": "Peer group the EL7 factor thresholds are measured against: whole market (default), the stock's sector or its industry.",
+            "type": "string",
+            "enum": [
+              "market",
+              "sector",
+              "industry"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "preset"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_etf_flows",
+      "description": "Which ETFs are gaining or losing money: biggest net inflows and outflows over 1d to 1y, in USD and % of assets, from daily share-count changes, with issuer and category. Funds whose summed flow exceeds 50% of assets are dropped as bad source data. Filter by category or issuer. No prices or NAVs. One fund: el7_etf_profile.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "period": {
+            "default": "1w",
+            "description": "Window ending at the latest snapshot day: 1d, 1w, 1m, 3m or 1y.",
+            "type": "string",
+            "enum": [
+              "1d",
+              "1w",
+              "1m",
+              "3m",
+              "1y"
+            ]
+          },
+          "limit": {
+            "default": 10,
+            "description": "Rows per side (1-30, default 10).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "category": {
+            "description": "ETF category filter, e.g. Equity, Commodity, Fixed Income (case-insensitive exact match).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "issuer": {
+            "description": "Issuer name contains, e.g. iShares, SPDR, Vanguard.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_etf_profile",
+      "description": "EL7's view of one ETF: issuer, category, letter grades (overall, liquidity, cost, performance, volatility), return statistics in %, volatility, Sharpe, drawdown, beta, net flows in USD and share-count change of its largest holdings. No price, NAV, AUM or weights. Compare flows across funds: el7_etf_flows.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9.^=_:$ -]+$",
+            "description": "ETF ticker, e.g. SPY, GLD, QQQ, VOO."
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_analyst_firms",
+      "description": "Wall Street analyst firms ranked by EL7's track-record score: rating actions, coverage, 90-day upgrade and downgrade mix, hit rates, average return after calls, star tier. Pass slug for one firm's detail. Counts and rates, no prices. Stocks where firms agree: el7_analyst_consensus.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "slug": {
+            "description": "A firm slug (e.g. goldman-sachs) for the detail view with 24-month history. Omit for the ranked list.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "sort": {
+            "default": "accuracy",
+            "description": "List order: accuracy (EL7 composite track-record score) or activity (rating actions in the last 90 days).",
+            "type": "string",
+            "enum": [
+              "accuracy",
+              "activity"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "description": "List mode: rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_analyst_consensus",
+      "description": "Stocks where three or more independent analyst firms moved the same way within 7 days: direction, firms aligned, window, average target premium %, newest first. Use to spot where Wall Street is converging. Then el7_stock_profile for the stock, or el7_analyst_firms for the firms' track records.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "direction": {
+            "description": "Only bullish (upgrades/raised targets) or bearish alignments.",
+            "type": "string",
+            "enum": [
+              "bullish",
+              "bearish"
+            ]
+          },
+          "days": {
+            "default": 30,
+            "description": "Look back this many days from today (1-90, default 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 90
+          },
+          "symbol": {
+            "description": "Only this stock.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9.^=_:$ -]+$"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_earnings_calendar",
+      "description": "US earnings dates for a window (default next 7 days): date, timing, confirmed (company announced it) or estimated, status, EPS and revenue surprise % versus consensus, beat streak. Filter by company, sector, timing, status. Use for 'who reports this week'. EPS and revenue values are not returned. Past record: el7_earnings_history.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "from": {
+            "description": "Window start, YYYY-MM-DD. Default: today.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Window end, YYYY-MM-DD (inclusive). Default: 7 days after `from`. Max 31 days from `from` (or 800 with `symbol`).",
+            "type": "string"
+          },
+          "symbol": {
+            "description": "Only this company (then the window may be up to 800 days, which gives its recent and upcoming reports).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9.^=_:$ -]+$"
+          },
+          "sector": {
+            "description": "A sector slug (technology) or sector name (Technology).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "report_time": {
+            "description": "bmo = before market open, amc = after market close, during = market hours.",
+            "type": "string",
+            "enum": [
+              "bmo",
+              "amc",
+              "during"
+            ]
+          },
+          "status": {
+            "description": "upcoming = future date; reported = results are in; pending = the date passed within 3 days and results are not in yet.",
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "reported",
+              "pending"
+            ]
+          },
+          "min_beat_streak": {
+            "description": "Only companies that beat estimates at least this many quarters in a row.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 40
+          },
+          "limit": {
+            "default": 30,
+            "description": "Rows to return (1-50, default 30).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip (for paging).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_stock_rank",
+      "description": "Ranks the EL7 stock universe (US, Saudi Tadawul or both) by overall score or any one of the seven factor axes, with filters by sector, industry and score range, best or worst first, paged. Scores and ranks only, no prices. Use for 'best quality stocks'. One stock: el7_stock_profile; rule-based screens: el7_screener_run.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "factor": {
+            "default": "overall",
+            "description": "EL7 score to use: overall (the blended EL7 score) or one axis: valuation, growth, quality, safety, capital_return, momentum, sentiment.",
+            "type": "string",
+            "enum": [
+              "overall",
+              "valuation",
+              "growth",
+              "quality",
+              "safety",
+              "capital_return",
+              "momentum",
+              "sentiment"
+            ]
+          },
+          "market": {
+            "default": "us",
+            "description": "us = NASDAQ/NYSE/AMEX stocks, sa = Saudi Tadawul stocks, all = both.",
+            "type": "string",
+            "enum": [
+              "us",
+              "sa",
+              "all"
+            ]
+          },
+          "sector": {
+            "description": "Sector slug or name, e.g. technology, energy, financial-services (same sectors as el7_sector_overview).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "industry": {
+            "description": "Industry name exactly as the site shows it in English, e.g. 'Software - Infrastructure', 'Banks - Regional' (case-insensitive).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "min_score": {
+            "description": "Only stocks whose chosen score is at least this (0-100).",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "max_score": {
+            "description": "Only stocks whose chosen score is at most this (0-100).",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "order": {
+            "default": "desc",
+            "description": "desc = best score first (default), asc = worst first. Rank 1 is always the best score.",
+            "type": "string",
+            "enum": [
+              "desc",
+              "asc"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Rows to skip, for paging (default 0).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_score_movers",
+      "description": "Stocks whose EL7 score (overall or one factor) changed the most between their last two reported periods, gains or declines, for US, Tadawul or both, optionally in one sector. Gives previous and new score and change in points. One stock's trail: el7_stock_score_history.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "factor": {
+            "default": "overall",
+            "description": "EL7 score to use: overall (the blended EL7 score) or one axis: valuation, growth, quality, safety, capital_return, momentum, sentiment.",
+            "type": "string",
+            "enum": [
+              "overall",
+              "valuation",
+              "growth",
+              "quality",
+              "safety",
+              "capital_return",
+              "momentum",
+              "sentiment"
+            ]
+          },
+          "direction": {
+            "default": "up",
+            "description": "up = biggest score gains, down = biggest score drops.",
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ]
+          },
+          "market": {
+            "default": "us",
+            "description": "us = NASDAQ/NYSE/AMEX stocks, sa = Saudi Tadawul stocks, all = both.",
+            "type": "string",
+            "enum": [
+              "us",
+              "sa",
+              "all"
+            ]
+          },
+          "sector": {
+            "description": "Sector slug or name, e.g. technology, energy, financial-services (same sectors as el7_sector_overview).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "limit": {
+            "default": 20,
+            "description": "Rows to return (1-50, default 20).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_stock_score_history",
+      "description": "One stock's EL7 score over time, oldest first: overall or one factor, as a percentile against the market, sector or industry, with rank and change from first to last point. Scores are quarterly (one point per fiscal period, so a handful of points per stock) and `from` filters by fiscal period end; a window with no period returns an empty, unbilled series that states the available periods. Scores only, no prices. Latest snapshot: el7_stock_profile; biggest recent changes: el7_score_movers.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9.^=_:$ -]+$",
+            "description": "Stock ticker, e.g. AAPL, NVDA, or a Tadawul symbol such as 2222.SR."
+          },
+          "factor": {
+            "default": "overall",
+            "description": "EL7 score to use: overall (the blended EL7 score) or one axis: valuation, growth, quality, safety, capital_return, momentum, sentiment.",
+            "type": "string",
+            "enum": [
+              "overall",
+              "valuation",
+              "growth",
+              "quality",
+              "safety",
+              "capital_return",
+              "momentum",
+              "sentiment"
+            ]
+          },
+          "scope": {
+            "default": "market",
+            "description": "Peer group the percentile is measured against: whole market (default), the stock's sector, or its industry. Sector/industry scopes also return the rank and peer count.",
+            "type": "string",
+            "enum": [
+              "market",
+              "sector",
+              "industry"
+            ]
+          },
+          "from": {
+            "description": "Only periods ending on or after this date, YYYY-MM-DD. Default: all stored history.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Most recent periods to return (1-60, default 20); the series is returned oldest first.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_stock_analysis",
+      "description": "The analysis EL7 already wrote and published for one stock (US or Tadawul), as on the stock page: business overview, drivers, buying and selling case, valuation read, what changed, dated triggers and FAQ. Stored, never generated. If none is written yet it returns empty text fields with generated_at null and a what_changed line saying so: a normal answer, not an error, and not billed. Dated snapshot: the text is as of generated_at, and the reply text warns when scores are newer or when an older text may label a non-USD issuer's figures in dollars. Numeric scores: el7_stock_profile.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[A-Za-z0-9.^=_:$ -]+$",
+            "description": "Stock ticker, e.g. AAPL, NVDA, or a Tadawul symbol such as 2222.SR."
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_earnings_history",
+      "description": "A company's past earnings reports, newest first: fiscal period, date, timing, EPS and revenue beat, miss or met with surprise %, beat streak, and the stock's move 1 and 5 trading days after (%). Use for 'does NVDA usually beat, and how does it trade after'. Next date: el7_earnings_calendar; written analysis: el7_earnings_brief.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20,
+            "pattern": "^[A-Za-z0-9.^=_-]+$",
+            "description": "Stock ticker, e.g. NVDA, AAPL, BRK-B."
+          },
+          "quarters": {
+            "default": 8,
+            "description": "How many past reports to return, newest first (1-12, default 8).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_earnings_brief",
+      "description": "EL7's stored written analysis around a company's earnings: pre-earnings brief, post-earnings summary and earnings-call summary, in the requested language (falls back to the other). Pre-earnings briefs expire shortly after the report. Nothing is generated on request; no transcripts. Numbers: el7_earnings_history.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20,
+            "pattern": "^[A-Za-z0-9.^=_-]+$",
+            "description": "Stock ticker, e.g. NVDA, MU."
+          },
+          "type": {
+            "default": "all",
+            "description": "pre = EL7's pre-earnings brief, post = post-earnings summary, transcript = earnings-call summary, all = every stored one (default).",
+            "type": "string",
+            "enum": [
+              "pre",
+              "post",
+              "transcript",
+              "all"
+            ]
+          },
+          "fiscal_date": {
+            "description": "The report date (YYYY-MM-DD) to read. Omit for the latest stored one of each type.",
+            "type": "string"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_earnings_season",
+      "description": "How the US earnings season is going: reported versus expected, beat, miss and met counts, beat rate, average trimmed EPS surprise %, and the same per sector. Seasons are labelled by the calendar quarter of the REPORT date, so October reporting is 'Q4 2026' (about Q3 results). Defaults to the current season, or the previous one while it has fewer than 200 reporters. Use for 'how is earnings season going'. Who reports next: el7_earnings_calendar; one company: el7_earnings_history.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "season": {
+            "description": "Reporting season as a calendar quarter of the REPORT date, e.g. 'Q3 2026'. Omit for the current season (the previous one while the current season has fewer than 200 reporters).",
+            "type": "string",
+            "pattern": "^Q[1-4] \\d{4}$"
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "el7_ai_search",
+      "description": "Semantic search over EL7's archive of news stories, central-bank statements, minutes, press conferences, speeches and reports (eight banks), weekly COT snapshots and prediction markets; returns passages with source and date, ranked by similarity (a match is not proof a quoted claim was made). Use for open questions ('what did Lagarde say about wage growth'); name the speaker or document type. News is Arabic; most central-bank speeches are English: query those in English. Not research or insights (el7_research_list, el7_insights_list). Then open the matching central-bank, news or COT tool.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 300,
+            "description": "What to look for, in Arabic or English. A question or topic works best."
+          },
+          "sources": {
+            "description": "Limit the search to these EL7 collections. Omit to search all of them.",
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "news",
+                "central_banks",
+                "cot",
+                "predictions"
+              ]
+            }
+          },
+          "from": {
+            "description": "Earliest document date, YYYY-MM-DD.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Latest document date, YYYY-MM-DD.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 6,
+            "description": "Passages to return (1-10).",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "lang": {
+            "description": "Output language: 'en' (default) or 'ar' for EL7's stored Arabic text.",
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "localizations": [
+    {
+      "locale": "ar",
+      "name": "EL7.AI",
+      "description": "EL7.AI منصة لاستخبارات وأبحاث الأسواق المالية. يمنح خادم MCP الخاص بها مساعدك الذكي 85 أداة للقراءة فقط موزعة على 15 مجالًا من أبحاث الأسواق، ليجيب من بيانات منتقاة وموثقة المصدر بدل التخمين.\n\nالتغطية: أخبار الأسواق لحظة بلحظة وEL7 Wire؛ الأجندة الاقتصادية العالمية مع السجل التاريخي والتوقعات ومؤشر المفاجآت؛ ثمانية بنوك مركزية (الفيدرالي، والمركزي الأوروبي، وبنك إنجلترا، وبنك اليابان، وبنك كندا، والاحتياطي الأسترالي، والاحتياطي النيوزيلندي، والوطني السويسري) بقراراتها وبياناتها والفروق بين البيانات المتتالية وأسئلة المؤتمرات الصحفية والمعاينات وترتيب النبرة؛ تمركزات المتداولين في تقرير CFTC؛ أساسيات الذهب والنفط من تدفقات واحتياطيات ومخزونات وأوبك والعرض والطلب؛ الأسهم بتقييماتها وتحليلاتها المكتوبة وترتيبها والفرز والقطاعات وإجماع المحللين ومواعيد النتائج وتاريخها وصفقات المطلعين وأعضاء الكونغرس؛ صناديق ETF؛ نظام السوق والموسمية والارتباطات والدورات؛ أسواق التوقعات؛ استراتيجيات التداول؛ ومكتبة الأبحاث. الخدمة موجهة لجمهور عالمي: الإنجليزية أولًا مع دعم كامل للعربية.\n\nتعيد كل إجابة تاريخ المصدر ورابطًا على el7.ai للتحقق من الأرقام، ويُشار إلى التاريخ المفقود بأنه غير متحقق منه. تقرأ الأدوات بيانات EL7 المخزنة والمنشورة: لا تنفذ صفقات ولا تنشئ تحليلًا جديدًا وقت الاستدعاء، وقد يستخدم البحث في الأخبار خدمة خارجية لتمثيل النص.\n\nاتصل بالخادم المستضاف عبر OAuth 2.1 ‏(PKCE والتسجيل الديناميكي للعملاء) أو بمفتاح EL7 MCP شخصي، دون أي تثبيت. يتطلب الوصول الكامل عضوية EL7 مدفوعة: 100,000 استدعاء شهريًا و120 في الدقيقة، وتحصل الحسابات المجانية على EL7 Wire ضمن 1,500 استدعاء إجمالًا. معلومات بحثية فقط وليست نصيحة استثمارية شخصية."
+    }
+  ]
+}
