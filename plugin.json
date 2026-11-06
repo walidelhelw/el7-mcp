@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "el7",
+  "version": "1.1.0",
+  "description": "Financial market intelligence for your AI: markets news, economic calendar, 8 central banks, COT positioning, stocks, earnings, gold and oil, with sources and dates. English first, full Arabic support.",
+  "author": { "name": "EL7.AI", "url": "https://el7.ai", "email": "support@el7.ai" },
+  "homepage": "https://el7.ai/en/mcp",
+  "repository": "https://github.com/walidelhelw/el7-mcp",
+  "license": "MIT",
+  "keywords": ["finance", "market research", "central banks", "economic calendar", "COT", "stocks", "earnings", "gold", "oil", "news", "read-only", "OAuth"]
+}
